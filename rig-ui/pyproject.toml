@@ -1,5 +1,5 @@
 [project]
-name = "boilerplate"
+name = "rig-ui"
 version = "0.1.0"
 description = ""
 authors = [
@@ -8,10 +8,11 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "pygobject (>=3.54.5,<4.0.0)"
 ]
 
 [tool.poetry]
-packages = [{include = "boilerplate", from = "src"}]
+packages = [{include = "rig_ui", from = "src"}]
 
 
 [build-system]
