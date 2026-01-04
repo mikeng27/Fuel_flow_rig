@@ -1,0 +1,356 @@
+actuators:
+  pump_1:
+    type: pump
+    control_unit:
+      min_input: 0
+      max_input: 100
+      unit: percent
+    flow:
+      unit: L_per_min
+      min: 0
+      max: 2.7
+    pressure:
+      unit: mbar
+      min: 0
+      max: 380
+
+  pump_2:
+    type: pump
+    model: M510S-V
+    unit: percent
+    min_input: 0
+    max_input: 100
+    flow:
+      unit: mL/min
+      min: 0
+      max: 12
+    pressure:
+      unit: mbar
+      min: 0
+      max: 300
+    voltage_options: [12]
+    max_current_mA: 200
+   
+
+  motorized_ball_valve_1:
+    type: motorized_valve
+    model: CWX-15N
+    unit: percent
+    min_position: 0
+    max_position: 100
+    open_time_s: 5
+    close_time_s: 5
+    voltage_options: [9, 12, 24, 85, 110, 220]
+    max_current_mA: 200
+    feedback: true
+
+  solenoid_valve_1:
+    type: solenoid_valve
+    states: [false, true]   # closed / open
+    default_state: false
+    nominal_voltage: DC24V
+    max_working_pressure_bar: 8  
+
+  solenoid_valve_2:
+    type: solenoid_valve
+    states: [false, true]   # closed / open
+    default_state: false
+    nominal_voltage: DC24V
+    max_working_pressure_bar: 8  
+
+  Dispense_valve:
+    type: solenoid_valve
+    states: [false, true]   # closed / open
+    default_state: false
+    nominal_voltage: DC24V
+    max_working_pressure_bar: 8  
+
+  canister_dock_switch:
+    type: digital_switch # it is a manual switch but for emulation it is treated as digital switch.
+    model: ASQ10610
+    description: Canister dock detection
+    unit: boolean
+    states:
+      - False  # not docked
+      - True   # docked
+    update_rate_hz: event  
+
+
+sensors:
+  flow_return:
+    type: flow
+    model: Flowmeter_800_series
+    role: return_line
+    unit: L/min
+    min: 0.05
+    max: 15.0
+    accuracy_percent: 2.0
+    output_type: pulse
+    k_factor: 142
+    update_rate_hz: 20
+
+  flow_dispense_column_1:
+    type: flow
+    model: Flowmeter_800_series
+    role: dispense_column_1
+    unit: L/min
+    min: 0.05
+    max: 15.0
+    accuracy_percent: 2.0
+    output_type: pulse
+    k_factor: 142
+    update_rate_hz: 20
+
+  flow_dispense_column_2:
+    type: flow
+    model: Flowmeter_800_series
+    role: dispense_column_2
+    unit: L/min
+    min: 0.05
+    max: 15.0
+    accuracy_percent: 2.0
+    output_type: pulse
+    k_factor: 142
+    update_rate_hz: 20
+
+  pressure_sensor_1:
+    type: pressure
+    model: EST330S
+    role: DUT
+    unit: mbar
+    min: 0
+    max: 125
+    accuracy_percent: 0.5
+    update_rate_hz: 20
+
+  pressure_sensor_2:
+  type: pressure_temperature
+  model: CYBT1441
+  role: pump_outlet
+  pressure:
+    unit: kPa
+    min: 0
+    max: 10000     # 10 MPa = 10,000 kPa
+    accuracy_percent: 0.5
+    update_rate_hz: 20
+  temperature:
+    unit: degC
+    min: -20
+    max: 100
+    accuracy_degC: 0.5
+    update_rate_hz: 20
+  
+
+  temp_sensor_1:
+    type: temperature
+    model: DS18B20
+    unit: °C
+    min: -55
+    max: 125
+    accuracy_degC: 0.5
+    update_rate_hz: 2
+
+  temp_sensor_2:
+    type: temperature
+    model: HTS102
+    role: DAQ
+    unit: degC
+    min: -50
+    max: 150
+    accuracy_degC: 0.5
+    update_rate_hz: 5  
+
+  temp_sensor_3:
+    type: temperature
+    model: TMP125
+    role: Dracal precision ambient temperature sensor
+    unit: degC
+    min: -55
+    max: 75
+    accuracy_degC: 1.0
+    resolution_degC: 0.5
+    update_rate_hz: 4
+
+
+  level_sensor_1:
+    type: level
+    model: pressure_based_level_tx
+    source_sensor: pressure_sensor_1
+    unit: percent
+    min: 0
+    max: 100
+    update_rate_hz: 10
+    mapping:
+      pressure_min_mbar: 0
+      pressure_max_mbar: 100
+      level_min_percent: 0
+      level_max_percent: 100
+
+  load_cell_1:
+    type: load_cell
+    model: ADI-30310
+    unit: kg
+    min: 0
+    max: 300
+    accuracy_percent: 0.03
+    update_rate_hz: 10   
+
+  load_cell_2:
+    type: load_cell
+    model: ADI-30310
+    unit: kg
+    min: 0
+    max: 300
+    accuracy_percent: 0.03
+    update_rate_hz: 10   
+
+  ultrasonic_level_sensor_1:
+    type: level
+    model: MB7851
+    unit: mm
+    min: 0
+    max: 5000
+    accuracy_mm: 1
+    update_rate_hz: 2    
+    
+  current_sensor_1:
+    type: current
+    model: D-1085
+    unit: A
+    min: -100
+    max: 100
+    sensitivity_mV_per_A: 20
+    operating_voltage_V: [5,8,35]
+    operating_current_mA: 20
+    update_rate_hz: 50
+
+  current_sensor_2:
+    type: current
+    model: D-1085
+    unit: A
+    min: -100
+    max: 100
+    sensitivity_mV_per_A: 20
+    operating_voltage_V: [5,8,35]
+    operating_current_mA: 20
+    update_rate_hz: 50
+
+  current_sensor_3:
+    type: current
+    model: D-1085
+    unit: A
+    min: -100
+    max: 100
+    sensitivity_mV_per_A: 20
+    operating_voltage_V: [5,8,35]
+    operating_current_mA: 20
+    update_rate_hz: 50
+
+  voltage_sensor_1:
+    type: voltage
+    model: GT-D2U
+    unit: V
+    min: 0
+    max: 500
+    output: 4-20mA
+    accuracy_percent: 0.5
+    update_rate_hz: 10
+    supply_V: 24
+
+  voltage_sensor_2:
+    type: voltage
+    model: GT-D2U
+    unit: V
+    min: 0
+    max: 500
+    output: 4-20mA
+    accuracy_percent: 0.5
+    update_rate_hz: 10
+    supply_V: 24
+
+  voltage_sensor_3:
+    type: voltage
+    model: GT-D2U
+    unit: V
+    min: 0
+    max: 500
+    output: 4-20mA
+    accuracy_percent: 0.5
+    update_rate_hz: 10
+    supply_V: 24
+
+battery_power:
+  type: battery
+  model: Actec_LiFePO4_12V_30Ah
+  chemistry: LiFePO4
+  nominal_voltage_V: 12.8
+  capacity_Ah: 30
+  energy_Wh: 384
+  internal_resistance_mOhm: 50
+  max_continuous_discharge_A: 45
+  max_peak_discharge_A: 70
+  charge_voltage_V: 14.4
+  bms_cutoff:
+    over_voltage_V: 14.8
+    under_voltage_V: 10
+  temperature_C:
+    discharge_min: -20
+    discharge_max: 60
+  self_discharge_percent_per_month: 3
+
+nfc_reader:
+  type: nfc_reader
+  model: ST25R3916B
+  frequency_MHz: 13.56
+  supported_standards: [ISO14443A, ISO14443B, ISO15693, NFC-F]
+  primary_tag: NXP_NTAG213   # ISO14443A, NFC Forum Type 2
+  interface: SPI
+  modes: [reader_writer, card_emulation]
+  read_distance_mm:
+    typical: 50
+    max: 100
+  features: [auto_antenna_tuning, dynamic_power_output, low_power_wakeup]
+  antenna:
+    type: external
+    size_mm: [30x50, 50x80]
+  power:
+    supply_V: 3.3
+    peak_current_mA: 300
+  outputs: [canister_uid, tag_present, read_error]
+
+power_management_module:
+  voltage_regulator:
+    type: voltage_regulator
+    model: SVS20
+    desc: Sollatek microprocessor-controlled mains stabiliser
+    input_V: [171, 272]
+    output_V: 230
+    tolerance_percent: 6
+    over_V_disconnect: 292
+    under_V_disconnect: 144
+    max_current_A: 20
+    response_time_s: 0.1
+    protection: [surge, spike, over_voltage, under_voltage, AVS]
+    temp_C: [0, 55]
+    humidity_percent: 95
+
+  hmi_screen:
+    type: lcd
+    model: NHD-C12864WC-FSW-FBW-3V3
+    description: 128x64 pixel COG LCD, ST7565R controller, parallel/serial interface
+    resolution: [128, 64]
+    controller: ST7565R
+    interface_options: [parallel, serial]
+    voltage:
+      logic_V: 3.3
+      backlight_V: 3.0
+    backlight:
+      color: white
+      current_mA: 21-55
+      lifetime_hours: 20000
+    duty_cycle: 1/64
+    bias: 1/9
+    temperature_range_C: [-20, 70]
+    optimal_view_angle: 6
+    rohs_compliant: true
+  
