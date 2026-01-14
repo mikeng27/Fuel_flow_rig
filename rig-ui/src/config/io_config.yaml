@@ -124,21 +124,23 @@ sensors:
     update_rate_hz: 20
 
   pressure_sensor_2:
-  type: pressure_temperature
-  model: CYBT1441
-  role: pump_outlet
-  pressure:
-    unit: kPa
-    min: 0
-    max: 10000     # 10 MPa = 10,000 kPa
-    accuracy_percent: 0.5
-    update_rate_hz: 20
-  temperature:
-    unit: degC
-    min: -20
-    max: 100
-    accuracy_degC: 0.5
-    update_rate_hz: 20
+    type: pressure_temperature
+    model: CYBT1441
+    role: pump_outlet
+    pressure:
+      unit: kPa
+      min: 0
+      max: 10000
+      accuracy_percent: 0.5
+      update_rate_hz: 20
+    temperature:
+      unit: degC
+      min: -20
+      max: 100
+      accuracy_degC: 0.5
+      update_rate_hz: 20
+
+
   
 
   temp_sensor_1:
@@ -198,9 +200,9 @@ sensors:
   load_cell_2:
     type: load_cell
     model: ADI-30310
-    unit: kg
+    unit: kga
     min: 0
-    max: 300
+    max: 300 
     accuracy_percent: 0.03
     update_rate_hz: 10   
 
