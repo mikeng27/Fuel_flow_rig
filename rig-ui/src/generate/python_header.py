@@ -1,134 +1,110 @@
+# rig-ui/src/generate/python_header.py
 import os
-from typing import Dict, List, Any
 
-# -------------------------------
-# Dummy CANMessage classes
-# -------------------------------
-class CANMessageError(Exception):
-    pass
-
-class CANId:
-    pass
-
-class CANMessagePayload:
-    pass
-
-class CANMessage:
-    pass
-
-# -------------------------------
-# Writing functions
-# -------------------------------
-def write_header(f):
-    f.write("# Auto-generated Python CAN ID definitions\n")
-    f.write("# DO NOT EDIT - generated from io_config.yaml\n\n")
-
-def write_priorities(f, priorities):
-    if not priorities:
-        return
-    f.write("from enum import IntEnum\n\n")
-    f.write("class Priority(IntEnum):\n")
-    for name, val in priorities.get("values", {}).items():
-        f.write(f"    {name} = {int(val, 0):#04b}\n")
-    f.write("\n")
-
-def write_destinations(f, destinations):
-    if not destinations:
-        return
-    f.write("class Destination(IntEnum):\n")
-    for name, val in destinations.get("values", {}).items():
-        f.write(f"    {name} = {int(val, 0):#04b}\n")
-    f.write("\n")
-
-def write_sources(f, sources):
-    if not sources:
-        return
-    f.write("class Source(IntEnum):\n")
-    for name, val in sources.get("values", {}).items():
-        f.write(f"    {name} = {int(val, 0):#04b}\n")
-    f.write("\n")
-
-def write_message_ids(f, messages):
-    f.write("class MessageID(IntEnum):\n")
-    for msg in messages:
-        f.write(f"    {msg['name']} = {msg['message_id']:#023b}\n")
-    f.write("\n")
-
-def write_dataclasses(f, messages, python_type_mapping):
-    for msg in messages:
-        if "payload" not in msg:
-            continue
-        type_prefix = msg.get("type_prefix", msg["name"])
-        f.write(f"class {type_prefix}(CANMessagePayload):\n")
-        for field in msg["payload"].get("fields", []):
-            py_type = python_type_mapping.get(field["type"], "int")
-            f.write(f"    {field['name']}: {py_type}\n")
-        # Add default struct format (adjust if needed)
-        f.write("    _struct_format: str = '<'  # adjust as needed\n\n")
-
-# -------------------------------
-# Main generate function
-# -------------------------------
-def generate(
-    enums: Dict[str, Dict[str, Any]],
-    messages: List[Dict[str, Any]],
-    output_dir: str,
-    python_type_mapping: Dict[str, str]
-) -> str:
-    # Ensure output directory exists
+def generate(io_config: dict, enums: dict, output_dir: str):
+    """
+    Generates can_ids.py including base classes, enums, and Event payloads from io_config.yaml
+    """
     os.makedirs(output_dir, exist_ok=True)
     path = os.path.join(output_dir, "can_ids.py")
 
     with open(path, "w", encoding="utf-8") as f:
-        write_header(f)
-        write_priorities(f, enums.get("priority"))
-        write_destinations(f, enums.get("destination"))
-        write_sources(f, enums.get("source"))
-        write_message_ids(f, messages)
-        write_dataclasses(f, messages, python_type_mapping)
+        # -------------------------------
+        # Base classes
+        f.write("# Base CAN classes\n")
+        f.write("class CANMessageError(Exception): pass\n")
+        f.write("class CANId: pass\n")
+        f.write("class CANMessagePayload: pass\n")
+        f.write("class CANMessage: pass\n\n")
 
-        # Add dummy CANMessage classes
-        f.write("""
-class CANMessageError(Exception): pass
+        # -------------------------------
+        # Enums
+        f.write("from enum import IntEnum\n\n")
 
-class CANId: pass
+        # Priority
+        f.write("class Priority(IntEnum):\n")
+        for k, v in enums.get("priority", {}).get("values", {}).items():
+            f.write(f"    {k} = {v}\n")
+        f.write("\n")
 
-class CANMessagePayload: pass
+        # Destination — read from io_config + add extra destinations
+        f.write("class Destination(IntEnum):\n")
+        dests = enums.get("destination", {}).get("values", {}).copy()
+        extra_dests = ["SYSTEM_MANAGER", "POWER_MODULE"]
+        for extra in extra_dests:
+            if extra not in dests:
+                dests[extra] = max(dests.values(), default=-1) + 1
 
-class CANMessage: pass
-""")
+        for k, v in dests.items():
+            f.write(f"    {k} = {v}\n")
+        f.write("\n")
+
+        # Source
+        f.write("class Source(IntEnum):\n")
+        for k, v in enums.get("source", {}).get("values", {}).items():
+            f.write(f"    {k} = {v}\n")
+        f.write("\n")
+
+        # MessageID
+        f.write("class MessageID(IntEnum):\n")
+        for k, v in enums.get("message_id", {}).get("values", {}).items():
+            f.write(f"    {k} = {v}\n")
+        f.write("\n")
+
+        # -------------------------------
+        # Event payload classes
+        f.write("# Event payload classes\n")
+
+        # Actuators
+        for act_name, act_cfg in io_config.get("actuators", {}).items():
+            class_name = "Event" + "".join(word.capitalize() for word in act_name.split("_"))
+            f.write(f"class {class_name}(CANMessagePayload):\n")
+            typ = act_cfg.get("type", "")
+            if typ == "pump":
+                f.write("    flow: float\n")
+                f.write("    pressure: float\n")
+            elif "valve" in typ:
+                f.write("    state: bool\n")
+            elif typ == "digital_switch":
+                f.write("    state: bool\n")
+            else:
+                f.write("    pass\n")
+            f.write("\n")
+
+        # Sensors
+        for sens_name, sens_cfg in io_config.get("sensors", {}).items():
+            class_name = "Event" + "".join(word.capitalize() for word in sens_name.split("_"))
+            f.write(f"class {class_name}(CANMessagePayload):\n")
+            typ = sens_cfg.get("type", "")
+            if typ in ["flow", "pressure", "temperature", "level", "current", "voltage", "load_cell"]:
+                if typ == "pressure_temperature":
+                    f.write("    pressure: float\n")
+                    f.write("    temperature: float\n")
+                else:
+                    f.write("    value: float\n")
+            else:
+                f.write("    value: float\n")  # default
+            f.write("\n")
+
+        # Battery / PM
+        if "battery_power" in io_config:
+            f.write("class EventBatteryPower(CANMessagePayload):\n")
+            f.write("    voltage: float\n")
+            f.write("    current: float\n")
+            f.write("    status: int\n\n")
+
+        if "power_management_module" in io_config:
+            f.write("class EventPowerManagementModule(CANMessagePayload):\n")
+            f.write("    voltage: float\n")
+            f.write("    current: float\n")
+            f.write("    status: int\n\n")
+
+        # -------------------------------
+        # Generate default Event classes for extra destinations
+        for extra in extra_dests:
+            class_name = f"Event{extra.capitalize()}"
+            f.write(f"class {class_name}(CANMessagePayload):\n")
+            f.write("    pass\n\n")
 
     print(f"✅ Python CAN header written to {path}")
     return path
-
-# -------------------------------
-# Optional: run directly for testing
-# -------------------------------
-if __name__ == "__main__":
-    # Example usage - generates to build/
-    import yaml
-
-    # Assuming your io_config.yaml is at ../../config/io_config.yaml
-    cfg_path = os.path.join(os.path.dirname(__file__), "..", "config", "io_config.yaml")
-    with open(cfg_path, "r") as f:
-        io_cfg = yaml.safe_load(f)
-
-    # Minimal enums/messages mapping for example
-    enums = {
-        "priority": {"values": {"CRITICAL": "0x0", "REALTIME": "0x1"}},
-        "destination": {"values": {"SYSTEM_MANAGER": "0x0", "FUEL_DISPENSE": "0x1"}},
-        "source": {"values": {"SYSTEM_MANAGER": "0x0", "FUEL_DISPENSE": "0x1"}},
-    }
-
-    messages = [
-        {"message_id": 0x01, "name": "SET_CONFIG_VERSION", "type_prefix": "ConfigSettings",
-         "description": "Set config version", "dlc": 4,
-         "payload": {"fields": [{"name": "version", "type": "uint32_t"}]}},
-        {"message_id": 0x02, "name": "RESET_MODULE", "type_prefix": "ResetModule",
-         "description": "Reset the module", "dlc": 0},
-    ]
-
-    python_type_mapping = {"uint32_t": "int", "uint16_t": "int", "uint8_t": "int", "float": "float"}
-
-    build_dir = os.path.join(os.path.dirname(__file__), "..", "..", "build")
-    generate(enums, messages, build_dir, python_type_mapping)

@@ -12,3 +12,4 @@ class FakeFSM:
 def main():
     """Return a stub FSM object for testing."""
     return FakeFSM()
+    

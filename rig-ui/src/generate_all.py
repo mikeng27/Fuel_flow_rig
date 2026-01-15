@@ -1,48 +1,34 @@
+# rig-ui/src/generate_all.py
 import os
 import yaml
-from generate import python_header, markdown, c_header
+from generate.python_header import generate
 
-BASE_DIR = os.path.dirname(__file__)
-BUILD_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "..", "build"))
-CONFIG_PATH = os.path.join(BASE_DIR, "config", "io_config.yaml")
+# Paths
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+IO_CONFIG_PATH = os.path.join(SRC_DIR, "config", "io_config.yaml")
+OUTPUT_DIR = SRC_DIR  # generate can_ids.py directly in rig-ui/src
 
-os.makedirs(BUILD_DIR, exist_ok=True)
-
-with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+# Load io_config.yaml
+with open(IO_CONFIG_PATH, "r", encoding="utf-8") as f:
     io_config = yaml.safe_load(f)
 
-# --- Convert YAML into enums/messages ---
+# Minimal enums (you can extend later)
 enums = {
-    "priority": {"values": {"CRITICAL": "0x0", "REALTIME": "0x1"}},
-    "destination": {"values": {name.upper(): hex(idx) for idx, name in enumerate(io_config.get("actuators", {}))}},
-    "source": {"values": {"SYSTEM_MANAGER": "0x0", "FUEL_DISPENSE": "0x1"}},
+    "priority": {"values": {"CRITICAL": 0, "REALTIME": 1}},
+    "destination": {"values": {act.upper(): idx for idx, act in enumerate(io_config.get("actuators", {}))}},
+    "source": {"values": {"SYSTEM_MANAGER": 0, "FUEL_DISPENSE": 1, "POWER_MODULE": 2}},
+    "message_id": {"values": {sensor.upper(): idx+1 for idx, sensor in enumerate(io_config.get("sensors", {}))}}
 }
 
-messages = []
-for idx, (sensor_name, sensor_cfg) in enumerate(io_config.get("sensors", {}).items(), start=1):
-    messages.append({
-        "message_id": idx,
-        "name": sensor_name.upper(),
-        "type_prefix": sensor_name.title().replace("_", ""),
-        "description": sensor_cfg.get("description", sensor_name),
-        "dlc": 4,
-        "payload": {
-            "fields": [
-                {"name": "value", "type": "float", "description": "Sensor reading"}
-            ]
-        }
-    })
-
+# Mapping YAML types to Python types
 python_type_mapping = {
-    "uint8_t": "int",
-    "uint16_t": "int",
-    "uint32_t": "int",
     "float": "float",
+    "int": "int",
+    "bool": "bool",
+    "str": "str",
 }
 
-# --- Run generators ---
-python_header.generate(enums, messages, BUILD_DIR, python_type_mapping)
-markdown.generate(messages, BUILD_DIR)
-c_header.generate(messages, BUILD_DIR)
+# Generate the Python CAN header
+generate(io_config, enums, OUTPUT_DIR)
 
-print(f"All files generated in {BUILD_DIR}")
+print(f"✅ can_ids.py regenerated in {OUTPUT_DIR}")

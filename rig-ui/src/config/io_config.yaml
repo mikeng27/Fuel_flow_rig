@@ -355,4 +355,15 @@ power_management_module:
     temperature_range_C: [-20, 70]
     optimal_view_angle: 6
     rohs_compliant: true
-  
+
+destinations:
+  PUMP_1: 0
+  PUMP_2: 1
+  MOTORIZED_BALL_VALVE_1: 2
+  SOLENOID_VALVE_1: 3
+  SOLENOID_VALVE_2: 4
+  DISPENSE_VALVE: 5
+  CANISTER_DOCK_SWITCH: 6
+  SYSTEM_MANAGER: 7
+  POWER_MODULE: 8
+ 
